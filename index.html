@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loja por Encomenda</title>
+<style>
+body { font-family: 'Segoe UI', sans-serif; margin:0; padding:0; background:#f5f5f5; }
+header { background:#ff6f61; color:#fff; padding:25px 15px; text-align:center; }
+header h1 { margin:0; font-size:1.8rem; }
+header p { margin:5px 0 0; font-size:1rem; }
+.container { width:90%; max-width:600px; margin:20px auto; }
+.products { display:grid; grid-template-columns: 1fr; gap:15px; }
+.product { background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+.product img { width:100%; display:block; }
+.product-content { padding:12px; text-align:center; }
+.product h2 { margin:8px 0; color:#333; font-size:1.2rem; }
+.product p { margin:5px 0; color:#555; font-size:0.95rem; }
+.quantity { width:60px; padding:6px; margin:10px auto; border-radius:5px; border:1px solid #ccc; text-align:center; }
+.add-btn { background:#ff6f61; color:#fff; padding:8px; border:none; border-radius:6px; cursor:pointer; font-size:14px; margin-top:8px; transition:0.2s; }
+.add-btn:hover { background:#e65c50; }
+#cart { background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin-top:25px; }
+#cart h2 { text-align:center; margin-bottom:10px; }
+#cart-items { list-style:none; padding:0; margin:0; }
+#cart-items li { padding:8px; border-bottom:1px solid #ccc; display:flex; justify-content:space-between; align-items:center; font-size:0.95rem; }
+#cart button { background:#ff6f61; color:#fff; border:none; padding:8px; border-radius:6px; cursor:pointer; width:80px; font-size:12px; }
+.totals { text-align:right; margin-top:8px; font-weight:bold; font-size:1rem; }
+.payment-btn { background:#28a745; color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer; font-size:14px; width:100%; margin-top:8px; }
+.payment-btn:hover { background:#218838; }
+#mbwayInfo { background:#fff; padding:10px; border-radius:8px; margin-top:10px; text-align:center; display:none; box-shadow:0 4px 8px rgba(0,0,0,0.1);}
+#mbwayInfo p { margin:4px 0; font-weight:bold; font-size:0.95rem; }
+input, textarea { width:100%; padding:8px; margin-top:5px; border-radius:5px; border:1px solid #ccc; font-size:0.9rem; }
+</style>
+</head>
+<body>
+<header>
+<h1>Loja por Encomenda</h1>
+<p>Pagamento via MB WAY 💳</p>
+</header>
+<div class="container">
+<div class="products">
+<div class="product" data-nome="Produto 1" data-preco="20">
+<img src="https://via.placeholder.com/300x200" alt="Produto 1">
+<div class="product-content">
+<h2>Produto 1</h2>
+<p>Preço: 20€</p>
+<input type="number" class="quantity" value="1" min="1">
+<button class="add-btn">Adicionar</button>
+</div>
+</div>
+<div class="product" data-nome="Produto 2" data-preco="15">
+<img src="https://via.placeholder.com/300x200" alt="Produto 2">
+<div class="product-content">
+<h2>Produto 2</h2>
+<p>Preço: 15€</p>
+<input type="number" class="quantity" value="1" min="1">
+<button class="add-btn">Adicionar</button>
+</div>
+</div>
+<div class="product" data-nome="Produto 3" data-preco="25">
+<img src="https://via.placeholder.com/300x200" alt="Produto 3">
+<div class="product-content">
+<h2>Produto 3</h2>
+<p>Preço: 25€</p>
+<input type="number" class="quantity" value="1" min="1">
+<button class="add-btn">Adicionar</button>
+</div>
+</div>
+</div>
+<div id="cart">
+<h2>Carrinho</h2>
+<ul id="cart-items"></ul>
+<div class="totals">Total: <span id="total">0</span>€</div>
+<button id="mbwayBtn" class="payment-btn">Gerar referência MB WAY</button>
+<div id="mbwayInfo">
+<p>Número MB WAY: 912345678</p>
+<p>Valor a pagar: <span id="valorMbway">0</span>€</p>
+<p>Referência: <span id="referenciaMbway"></span></p>
+<p>Após pagamento, clique em &quot;Confirmar pagamento&quot;</p>
+<button id="confirmPayment" class="payment-btn">Confirmar pagamento</button>
+</div>
+<input type="text" id="nomeCliente" placeholder="Nome completo" required>
+<input type="tel" id="telefoneCliente" placeholder="Telefone" required>
+<input type="text" id="moradaCliente" placeholder="Morada" required>
+<textarea id="observacoesCliente" placeholder="Observações (opcional)"></textarea>
+<button id="sendWhatsapp" disabled>Enviar via WhatsApp</button>
+</div>
+</div>
+<footer>
+<p>Produção sob encomenda. Prazo de envio: até 5 dias úteis.</p>
+</footer>
+<script>
+const whatsappNumber = '351912345678';
+let cart = [];
+let pagamentoConfirmado = false;
+function calcularTotal(){ return cart.reduce((acc,i)=>acc + i.preco*i.quantidade,0);}
+function atualizarTotal(){ document.getElementById('total').innerText = calcularTotal();}
+document.querySelectorAll('.add-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const prod = btn.closest('.product');
+    const nome = prod.dataset.nome;
+    const preco = parseFloat(prod.dataset.preco);
+    const qtd = parseInt(prod.querySelector('.quantity').value);
+    const exist = cart.find(i=>i.nome===nome);
+    if(exist){ exist.quantidade += qtd; } else { cart.push({nome, preco, quantidade:qtd}); }
+    renderCart();
+    atualizarTotal();
+  });
+});
+function renderCart(){
+  const cartList=document.getElementById('cart-items');
+  cartList.innerHTML='';
+  cart.forEach((i,idx)=>{
+    const li=document.createElement('li');
+    li.innerHTML = `${i.nome} - Qtd: ${i.quantidade} - ${i.preco}€ 
+    <button onclick="removeItem(${idx})">Remover</button>`;
+    cartList.appendChild(li);
+  });
+  atualizarTotal();
+}
+function removeItem(idx){ cart.splice(idx,1); renderCart(); }
+document.getElementById('mbwayBtn').addEventListener('click',()=>{
+  if(cart.length===0){ alert('Adicione produtos antes de gerar referência'); return; }
+  const total = calcularTotal();
+  const referencia = Math.floor(Math.random()*899999 + 100000);
+  document.getElementById('valorMbway').innerText = total;
+  document.getElementById('referenciaMbway').innerText = referencia;
+  document.getElementById('mbwayInfo').style.display='block';
+});
+document.getElementById('confirmPayment').addEventListener('click',()=>{
+  pagamentoConfirmado=true;
+  document.getElementById('sendWhatsapp').disabled=false;
+  alert('Pagamento confirmado! Agora pode enviar via WhatsApp');
+});
+document.getElementById('sendWhatsapp').addEventListener('click',()=>{
+  if(!pagamentoConfirmado){ alert('Confirme o pagamento antes de enviar'); return; }
+  const nome=document.getElementById('nomeCliente').value;
+  const tel=document.getElementById('telefoneCliente').value;
+  const morada=document.getElementById('moradaCliente').value;
+  const obs=document.getElementById('observacoesCliente').value || '-';
+  if(!nome || !tel || !morada){ alert('Preencha todos os campos obrigatórios'); return; }
+  let msg = `Olá!%0AQuero fazer uma encomenda:%0A- Nome: ${nome}%0A- Telefone: ${tel}%0A- Morada: ${morada}%0A`;
+  msg += cart.map(i=>`- Produto: ${i.nome}, Qtd: ${i.quantidade}, Preço unitário: ${i.preco}€`).join('%0A');
+  msg += `%0A- Observações: ${obs}`;
+  window.open(`https://wa.me/${whatsappNumber}?text=${msg}`,'_blank');
+});
+</script>
+</body>
+</html>
